@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Feed the Cats!</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      image-rendering: pixelated;
+    }
+
+    body {
+      font-family: 'Press Start 2P', cursive;
+      overflow: hidden;
+      background: #87CEEB;
+    }
+
+    #game {
+      width: 100vw;
+      height: 100vh;
+      position: relative;
+      background: linear-gradient(to bottom, #5C94FC 0%, #5C94FC 60%, #7CFC00 60%, #228B22 100%);
+      cursor: crosshair;
+    }
+
+    /* Pixel sun */
+    .sun {
+      position: absolute;
+      top: 40px;
+      right: 80px;
+      width: 80px;
+      height: 80px;
+      background: #FCE883;
+      border-radius: 4px;
+      box-shadow:
+        0 0 0 8px #FCE883,
+        16px 0 0 8px #FCE883,
+        -16px 0 0 8px #FCE883,
+        0 16px 0 8px #FCE883,
+        0 -16px 0 8px #FCE883;
+    }
+
+    /* Clouds */
+    .cloud {
+      position: absolute;
+      background: #fff;
+      border-radius: 4px;
+    }
+
+    .cloud::before, .cloud::after {
+      content: '';
+      position: absolute;
+      background: #fff;
+      border-radius: 4px;
+    }
+
+    .cloud1 {
+      top: 80px;
+      left: 10%;
+      width: 96px;
+      height: 32px;
+    }
+    .cloud1::before { width: 48px; height: 32px; top: -24px; left: 16px; }
+    .cloud1::after { width: 32px; height: 24px; top: -16px; left: 56px; }
+
+    .cloud2 {
+      top: 120px;
+      left: 40%;
+      width: 80px;
+      height: 28px;
+    }
+    .cloud2::before { width: 40px; height: 28px; top: -20px; left: 12px; }
+    .cloud2::after { width: 28px; height: 20px; top: -12px; left: 44px; }
+
+    /* Prompt box */
+    #prompt {
+      position: absolute;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #000;
+      border: 4px solid #fff;
+      padding: 16px 24px;
+      color: #fff;
+      font-size: 14px;
+      text-align: center;
+      z-index: 100;
+      box-shadow: 8px 8px 0 rgba(0,0,0,0.3);
+    }
+
+    #prompt .counter {
+      color: #FF6B35;
+      display: block;
+      margin-top: 12px;
+      font-size: 18px;
+    }
+
+    /* Fat orange cat - pixel art style */
+    .cat {
+      position: absolute;
+      width: 64px;
+      height: 48px;
+      cursor: pointer;
+      transition: transform 0.1s;
+      z-index: 10;
+    }
+
+    .cat:hover {
+      transform: scale(1.1);
+    }
+
+    .cat.fed {
+      cursor: default;
+    }
+
+    .cat-body {
+      position: absolute;
+      width: 56px;
+      height: 40px;
+      background: #FF8C00;
+      border-radius: 8px;
+      bottom: 0;
+      left: 4px;
+      border: 3px solid #CC7000;
+    }
+
+    /* Cat belly stripe */
+    .cat-body::after {
+      content: '';
+      position: absolute;
+      width: 32px;
+      height: 24px;
+      background: #FFB366;
+      border-radius: 50%;
+      bottom: 4px;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+
+    .cat-head {
+      position: absolute;
+      width: 32px;
+      height: 28px;
+      background: #FF8C00;
+      border-radius: 6px;
+      top: 0;
+      left: 0;
+      border: 3px solid #CC7000;
+      z-index: 2;
+    }
+
+    /* Ears */
+    .cat-head::before, .cat-head::after {
+      content: '';
+      position: absolute;
+      width: 0;
+      height: 0;
+      border-left: 8px solid transparent;
+      border-right: 8px solid transparent;
+      border-bottom: 12px solid #FF8C00;
+      top: -10px;
+    }
+
+    .cat-head::before { left: -2px; }
+    .cat-head::after { right: -2px; }
+
+    /* Eyes */
+    .cat-eyes {
+      position: absolute;
+      top: 10px;
+      left: 6px;
+      width: 20px;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .cat-eye {
+      width: 6px;
+      height: 8px;
+      background: #000;
+      border-radius: 50%;
+    }
+
+    /* Tail */
+    .cat-tail {
+      position: absolute;
+      width: 8px;
+      height: 24px;
+      background: #FF8C00;
+      border: 2px solid #CC7000;
+      border-radius: 4px;
+      bottom: 12px;
+      right: -4px;
+      transform: rotate(-20deg);
+      transform-origin: bottom center;
+      animation: tailWag 0.5s ease-in-out infinite alternate;
+    }
+
+    @keyframes tailWag {
+      from { transform: rotate(-20deg); }
+      to { transform: rotate(20deg); }
+    }
+
+    /* Walking animation */
+    .cat.walking {
+      animation: catBounce 0.3s ease-in-out infinite;
+    }
+
+    @keyframes catBounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-4px); }
+    }
+
+    .cat.fed .cat-tail {
+      animation: happyTail 0.2s ease-in-out infinite alternate;
+    }
+
+    @keyframes happyTail {
+      from { transform: rotate(-30deg); }
+      to { transform: rotate(30deg); }
+    }
+
+    /* Food bowl */
+    .food-bowl {
+      position: absolute;
+      width: 40px;
+      height: 20px;
+      z-index: 5;
+    }
+
+    .bowl-base {
+      position: absolute;
+      width: 40px;
+      height: 16px;
+      background: #C0C0C0;
+      border-radius: 0 0 20px 20px;
+      bottom: 0;
+      border: 3px solid #888;
+    }
+
+    .bowl-food {
+      position: absolute;
+      width: 32px;
+      height: 12px;
+      background: #8B4513;
+      border-radius: 50%;
+      top: 0;
+      left: 4px;
+    }
+
+    .bowl-food::before {
+      content: '';
+      position: absolute;
+      width: 6px;
+      height: 6px;
+      background: #A0522D;
+      border-radius: 50%;
+      top: 2px;
+      left: 8px;
+    }
+
+    .bowl-food::after {
+      content: '';
+      position: absolute;
+      width: 4px;
+      height: 4px;
+      background: #A0522D;
+      border-radius: 50%;
+      top: 4px;
+      left: 18px;
+    }
+
+    /* Grass tufts */
+    .grass {
+      position: absolute;
+      bottom: 0;
+      width: 100%;
+      height: 40%;
+      overflow: hidden;
+      pointer-events: none;
+    }
+
+    .grass-tuft {
+      position: absolute;
+      width: 12px;
+      height: 20px;
+      background: #228B22;
+      clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+    }
+
+    /* Flowers */
+    .flower {
+      position: absolute;
+      width: 16px;
+      height: 16px;
+      pointer-events: none;
+    }
+
+    .flower::before {
+      content: '';
+      position: absolute;
+      width: 16px;
+      height: 16px;
+      background: radial-gradient(circle, #FFD700 30%, #FF69B4 30%, #FF69B4 60%, transparent 60%);
+      border-radius: 50%;
+    }
+
+    .flower::after {
+      content: '';
+      position: absolute;
+      width: 4px;
+      height: 20px;
+      background: #228B22;
+      top: 14px;
+      left: 6px;
+    }
+
+    /* Win screen */
+    #win-screen {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: #000;
+      color: #fff;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      z-index: 1000;
+      text-align: center;
+    }
+
+    #win-screen h1 {
+      font-size: 32px;
+      color: #FF6B35;
+      margin-bottom: 24px;
+      animation: blink 0.5s infinite;
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    #win-screen p {
+      font-size: 16px;
+      margin-bottom: 32px;
+    }
+
+    #win-screen iframe {
+      width: 80vw;
+      max-width: 800px;
+      height: 45vw;
+      max-height: 450px;
+      border: 8px solid #FF6B35;
+      border-radius: 4px;
+    }
+
+    #win-screen.show-video h1,
+    #win-screen.show-video p {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div id="game">
+    <div class="sun"></div>
+    <div class="cloud cloud1"></div>
+    <div class="cloud cloud2"></div>
+
+    <div id="prompt">
+      CLICK ON 3 CATS<br>TO FEED THEM!
+      <span class="counter"><span id="fed-count">0</span> / 3</span>
+    </div>
+
+    <div class="grass" id="grass"></div>
+  </div>
+
+  <div id="win-screen">
+    <h1>GOOD JOB!</h1>
+    <p>ALL CATS FED!</p>
+    <p>HERE'S YOUR REWARD!</p>
+    <div id="video-container"></div>
+  </div>
+
+  <script>
+    const game = document.getElementById('game');
+    const grassContainer = document.getElementById('grass');
+    const fedCountEl = document.getElementById('fed-count');
+    const winScreen = document.getElementById('win-screen');
+
+    let fedCount = 0;
+    const cats = [];
+    const NUM_CATS = 6;
+
+    // Create grass tufts
+    for (let i = 0; i < 50; i++) {
+      const tuft = document.createElement('div');
+      tuft.className = 'grass-tuft';
+      tuft.style.left = Math.random() * 100 + '%';
+      tuft.style.bottom = Math.random() * 30 + '%';
+      tuft.style.transform = `scale(${0.5 + Math.random()})`;
+      grassContainer.appendChild(tuft);
+    }
+
+    // Create flowers
+    for (let i = 0; i < 15; i++) {
+      const flower = document.createElement('div');
+      flower.className = 'flower';
+      flower.style.left = Math.random() * 95 + '%';
+      flower.style.bottom = 5 + Math.random() * 35 + '%';
+      game.appendChild(flower);
+    }
+
+    // Create a cat
+    function createCat(id) {
+      const cat = document.createElement('div');
+      cat.className = 'cat walking';
+      cat.id = `cat-${id}`;
+      cat.innerHTML = `
+        <div class="cat-body"></div>
+        <div class="cat-head">
+          <div class="cat-eyes">
+            <div class="cat-eye"></div>
+            <div class="cat-eye"></div>
+          </div>
+        </div>
+        <div class="cat-tail"></div>
+      `;
+
+      // Random starting position in the grass area
+      const startX = Math.random() * (window.innerWidth - 100) + 20;
+      const startY = window.innerHeight * 0.55 + Math.random() * (window.innerHeight * 0.35);
+
+      cat.style.left = startX + 'px';
+      cat.style.top = startY + 'px';
+
+      // Movement properties (slower speed)
+      const catData = {
+        element: cat,
+        x: startX,
+        y: startY,
+        vx: (Math.random() - 0.5) * 1.2,
+        vy: (Math.random() - 0.5) * 0.6,
+        fed: false
+      };
+
+      cat.addEventListener('click', () => feedCat(catData));
+
+      game.appendChild(cat);
+      return catData;
+    }
+
+    // Feed a cat
+    function feedCat(catData) {
+      if (catData.fed) return;
+
+      catData.fed = true;
+      catData.element.classList.remove('walking');
+      catData.element.classList.add('fed');
+      catData.vx = 0;
+      catData.vy = 0;
+
+      // Create food bowl
+      const bowl = document.createElement('div');
+      bowl.className = 'food-bowl';
+      bowl.innerHTML = `
+        <div class="bowl-food"></div>
+        <div class="bowl-base"></div>
+      `;
+      bowl.style.left = (catData.x + 12) + 'px';
+      bowl.style.top = (catData.y + 48) + 'px';
+      game.appendChild(bowl);
+
+      fedCount++;
+      fedCountEl.textContent = fedCount;
+
+      if (fedCount >= 3) {
+        setTimeout(() => {
+          winScreen.style.display = 'flex';
+          setTimeout(() => {
+            // Embed the video with autoplay
+            const videoContainer = document.getElementById('video-container');
+            videoContainer.innerHTML = `
+              <iframe
+                src="https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=1&controls=1"
+                allow="autoplay; encrypted-media"
+                allowfullscreen>
+              </iframe>
+            `;
+            winScreen.classList.add('show-video');
+          }, 1500);
+        }, 500);
+      }
+    }
+
+    // Update cat positions
+    function updateCats() {
+      const minY = window.innerHeight * 0.55;
+      const maxY = window.innerHeight - 80;
+      const minX = 20;
+      const maxX = window.innerWidth - 80;
+
+      cats.forEach(cat => {
+        if (cat.fed) return;
+
+        // Random direction changes (slower)
+        if (Math.random() < 0.02) {
+          cat.vx = (Math.random() - 0.5) * 1.5;
+          cat.vy = (Math.random() - 0.5) * 0.8;
+        }
+
+        cat.x += cat.vx;
+        cat.y += cat.vy;
+
+        // Boundary checks
+        if (cat.x < minX) { cat.x = minX; cat.vx *= -1; }
+        if (cat.x > maxX) { cat.x = maxX; cat.vx *= -1; }
+        if (cat.y < minY) { cat.y = minY; cat.vy *= -1; }
+        if (cat.y > maxY) { cat.y = maxY; cat.vy *= -1; }
+
+        // Flip cat based on direction
+        cat.element.style.transform = cat.vx < 0 ? 'scaleX(-1)' : 'scaleX(1)';
+        cat.element.style.left = cat.x + 'px';
+        cat.element.style.top = cat.y + 'px';
+      });
+
+      requestAnimationFrame(updateCats);
+    }
+
+    // Initialize cats
+    for (let i = 0; i < NUM_CATS; i++) {
+      cats.push(createCat(i));
+    }
+
+    // Start animation
+    updateCats();
+  </script>
+</body>
+</html>
