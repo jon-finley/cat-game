@@ -201,6 +201,36 @@
       animation: tailWag 0.5s ease-in-out infinite alternate;
     }
 
+    /* Ragdoll cat colors */
+    .cat.ragdoll .cat-body {
+      background: #F5F5DC;
+      border-color: #D4C4A8;
+    }
+
+    .cat.ragdoll .cat-body::after {
+      background: #FFFEF0;
+    }
+
+    .cat.ragdoll .cat-head {
+      background: linear-gradient(135deg, #F5F5DC 40%, #B8A88A 100%);
+      border-color: #D4C4A8;
+    }
+
+    .cat.ragdoll .cat-head::before,
+    .cat.ragdoll .cat-head::after {
+      border-bottom-color: #A89070;
+    }
+
+    .cat.ragdoll .cat-eye {
+      background: #4A90D9;
+      box-shadow: inset 2px 2px 0 #2E5A8A;
+    }
+
+    .cat.ragdoll .cat-tail {
+      background: linear-gradient(to bottom, #F5F5DC, #A89070);
+      border-color: #D4C4A8;
+    }
+
     @keyframes tailWag {
       from { transform: rotate(-20deg); }
       to { transform: rotate(20deg); }
@@ -398,7 +428,7 @@
 
     let fedCount = 0;
     const cats = [];
-    const NUM_CATS = 6;
+    const NUM_CATS = 12;
 
     // Audio context for sounds
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -532,9 +562,9 @@
     }
 
     // Create a cat
-    function createCat(id) {
+    function createCat(id, isRagdoll = false) {
       const cat = document.createElement('div');
-      cat.className = 'cat walking';
+      cat.className = isRagdoll ? 'cat walking ragdoll' : 'cat walking';
       cat.id = `cat-${id}`;
       cat.innerHTML = `
         <div class="cat-body"></div>
@@ -649,9 +679,10 @@
       requestAnimationFrame(updateCats);
     }
 
-    // Initialize cats
+    // Initialize cats (half orange, half ragdoll)
     for (let i = 0; i < NUM_CATS; i++) {
-      cats.push(createCat(i));
+      const isRagdoll = i >= NUM_CATS / 2;
+      cats.push(createCat(i, isRagdoll));
     }
 
     // Start animation
