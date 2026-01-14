@@ -231,6 +231,50 @@
       border-color: #D4C4A8;
     }
 
+    /* Crazy ragdoll */
+    .cat.crazy .cat-eye {
+      width: 16px;
+      height: 16px;
+      background: #FF0000;
+      box-shadow: 0 0 10px #FF0000, inset 3px 3px 0 #FFff00;
+      animation: crazyEyes 0.15s infinite alternate;
+    }
+
+    .cat.crazy .cat-head {
+      animation: crazyHead 0.1s infinite;
+    }
+
+    .cat.crazy .cat-tail {
+      animation: crazyTail 0.08s infinite;
+    }
+
+    .cat.crazy .cat-body {
+      animation: crazyBody 0.2s infinite;
+    }
+
+    @keyframes crazyEyes {
+      0% { transform: scale(1); }
+      100% { transform: scale(1.3); }
+    }
+
+    @keyframes crazyHead {
+      0% { transform: rotate(-5deg); }
+      50% { transform: rotate(5deg); }
+      100% { transform: rotate(-5deg); }
+    }
+
+    @keyframes crazyTail {
+      0% { transform: rotate(-45deg); }
+      50% { transform: rotate(45deg); }
+      100% { transform: rotate(-45deg); }
+    }
+
+    @keyframes crazyBody {
+      0% { transform: scaleX(1); }
+      50% { transform: scaleX(1.05); }
+      100% { transform: scaleX(1); }
+    }
+
     @keyframes tailWag {
       from { transform: rotate(-20deg); }
       to { transform: rotate(20deg); }
@@ -406,8 +450,11 @@
     <div class="cloud cloud2"></div>
 
     <div id="prompt">
-      CLICK ON 3 CATS<br>TO FEED THEM!
-      <span class="counter"><span id="fed-count">0</span> / 3</span>
+      FEED 2 ORANGE CATS<br>AND 2 RAGDOLLS!
+      <span class="counter">
+        <span style="color:#FF8C00">ORANGE: <span id="orange-count">0</span>/2</span>
+        <span style="color:#4A90D9">RAGDOLL: <span id="ragdoll-count">0</span>/2</span>
+      </span>
     </div>
 
     <div class="grass" id="grass"></div>
@@ -423,10 +470,12 @@
   <script>
     const game = document.getElementById('game');
     const grassContainer = document.getElementById('grass');
-    const fedCountEl = document.getElementById('fed-count');
+    const orangeCountEl = document.getElementById('orange-count');
+    const ragdollCountEl = document.getElementById('ragdoll-count');
     const winScreen = document.getElementById('win-screen');
 
-    let fedCount = 0;
+    let orangeFed = 0;
+    let ragdollFed = 0;
     const cats = [];
     const NUM_CATS = 12;
 
@@ -649,9 +698,12 @@
     }
 
     // Create a cat
-    function createCat(id, isRagdoll = false) {
+    function createCat(id, isRagdoll = false, isCrazy = false) {
       const cat = document.createElement('div');
-      cat.className = isRagdoll ? 'cat walking ragdoll' : 'cat walking';
+      let className = 'cat walking';
+      if (isRagdoll) className += ' ragdoll';
+      if (isCrazy) className += ' crazy';
+      cat.className = className;
       cat.id = `cat-${id}`;
       cat.innerHTML = `
         <div class="cat-body"></div>
@@ -671,15 +723,20 @@
       cat.style.left = startX + 'px';
       cat.style.top = startY + 'px';
 
-      // Movement properties (slower speed)
+      // Ragdolls move 2x faster, crazy ragdoll moves 3x faster
+      const speedMultiplier = isCrazy ? 3 : (isRagdoll ? 2 : 1);
+
+      // Movement properties
       const catData = {
         element: cat,
         x: startX,
         y: startY,
-        vx: (Math.random() - 0.5) * 1.2,
-        vy: (Math.random() - 0.5) * 0.6,
+        vx: (Math.random() - 0.5) * 1.2 * speedMultiplier,
+        vy: (Math.random() - 0.5) * 0.6 * speedMultiplier,
         fed: false,
-        isRagdoll: isRagdoll
+        isRagdoll: isRagdoll,
+        isCrazy: isCrazy,
+        speedMultiplier: speedMultiplier
       };
 
       cat.addEventListener('click', () => feedCat(catData));
@@ -715,10 +772,17 @@
       bowl.style.top = (catData.y + 90) + 'px';
       game.appendChild(bowl);
 
-      fedCount++;
-      fedCountEl.textContent = fedCount;
+      // Update the appropriate counter
+      if (catData.isRagdoll) {
+        ragdollFed++;
+        ragdollCountEl.textContent = Math.min(ragdollFed, 2);
+      } else {
+        orangeFed++;
+        orangeCountEl.textContent = Math.min(orangeFed, 2);
+      }
 
-      if (fedCount >= 3) {
+      // Win condition: 2 orange AND 2 ragdolls
+      if (orangeFed >= 2 && ragdollFed >= 2) {
         setTimeout(() => {
           musicStarted = false; // Stop the music
           winScreen.style.display = 'flex';
@@ -748,10 +812,10 @@
       cats.forEach(cat => {
         if (cat.fed) return;
 
-        // Random direction changes (slower)
+        // Random direction changes (speed based on cat type)
         if (Math.random() < 0.02) {
-          cat.vx = (Math.random() - 0.5) * 1.5;
-          cat.vy = (Math.random() - 0.5) * 0.8;
+          cat.vx = (Math.random() - 0.5) * 1.5 * cat.speedMultiplier;
+          cat.vy = (Math.random() - 0.5) * 0.8 * cat.speedMultiplier;
         }
 
         cat.x += cat.vx;
@@ -772,10 +836,11 @@
       requestAnimationFrame(updateCats);
     }
 
-    // Initialize cats (half orange, half ragdoll)
+    // Initialize cats (half orange, half ragdoll, one crazy ragdoll)
     for (let i = 0; i < NUM_CATS; i++) {
       const isRagdoll = i >= NUM_CATS / 2;
-      cats.push(createCat(i, isRagdoll));
+      const isCrazy = i === NUM_CATS - 1; // Last ragdoll is crazy
+      cats.push(createCat(i, isRagdoll, isCrazy));
     }
 
     // Start animation
