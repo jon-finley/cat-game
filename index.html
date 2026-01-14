@@ -400,8 +400,91 @@
     const cats = [];
     const NUM_CATS = 6;
 
-    // Audio context for meow sounds
+    // Audio context for sounds
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    let musicStarted = false;
+
+    // 8-bit background music
+    const melody = [
+      { note: 392, duration: 0.2 },  // G
+      { note: 440, duration: 0.2 },  // A
+      { note: 494, duration: 0.2 },  // B
+      { note: 523, duration: 0.4 },  // C
+      { note: 494, duration: 0.2 },  // B
+      { note: 440, duration: 0.2 },  // A
+      { note: 392, duration: 0.4 },  // G
+      { note: 330, duration: 0.2 },  // E
+      { note: 349, duration: 0.2 },  // F
+      { note: 392, duration: 0.4 },  // G
+      { note: 440, duration: 0.2 },  // A
+      { note: 392, duration: 0.2 },  // G
+      { note: 349, duration: 0.2 },  // F
+      { note: 330, duration: 0.4 },  // E
+      { note: 294, duration: 0.4 },  // D
+      { note: 330, duration: 0.4 },  // E
+    ];
+
+    const bass = [
+      { note: 196, duration: 0.8 },  // G
+      { note: 262, duration: 0.8 },  // C
+      { note: 196, duration: 0.8 },  // G
+      { note: 165, duration: 0.8 },  // E
+      { note: 175, duration: 0.8 },  // F
+      { note: 196, duration: 0.8 },  // G
+      { note: 147, duration: 0.8 },  // D
+      { note: 165, duration: 0.8 },  // E
+    ];
+
+    function playNote(freq, startTime, duration, type = 'square', volume = 0.15) {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+
+      osc.frequency.value = freq;
+      osc.type = type;
+
+      gain.gain.setValueAtTime(volume, startTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, startTime + duration - 0.05);
+
+      osc.start(startTime);
+      osc.stop(startTime + duration);
+    }
+
+    function playMusic() {
+      if (!musicStarted) return;
+
+      const now = audioCtx.currentTime;
+      let melodyTime = now;
+      let bassTime = now;
+
+      // Play melody
+      melody.forEach(note => {
+        playNote(note.note, melodyTime, note.duration, 'square', 0.12);
+        melodyTime += note.duration;
+      });
+
+      // Play bass
+      bass.forEach(note => {
+        playNote(note.note, bassTime, note.duration, 'triangle', 0.2);
+        bassTime += note.duration;
+      });
+
+      // Loop the music
+      const loopDuration = melodyTime - now;
+      setTimeout(playMusic, loopDuration * 1000 - 50);
+    }
+
+    function startMusic() {
+      if (musicStarted) return;
+      audioCtx.resume();
+      musicStarted = true;
+      playMusic();
+    }
+
+    // Start music on first click
+    document.addEventListener('click', startMusic, { once: true });
 
     // Synthesize a retro meow sound
     function playMeow() {
@@ -514,6 +597,7 @@
 
       if (fedCount >= 3) {
         setTimeout(() => {
+          musicStarted = false; // Stop the music
           winScreen.style.display = 'flex';
           setTimeout(() => {
             // Embed the video with autoplay
