@@ -678,6 +678,47 @@
       osc2.stop(now + 0.45);
     }
 
+    // Crazy cat sound - chaotic glitchy screech
+    function playCrazyMeow() {
+      const now = audioCtx.currentTime;
+
+      // Multiple oscillators for chaos
+      for (let i = 0; i < 5; i++) {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        const startFreq = 200 + Math.random() * 800;
+        osc.frequency.setValueAtTime(startFreq, now + i * 0.05);
+        osc.frequency.linearRampToValueAtTime(startFreq + Math.random() * 1000 - 500, now + i * 0.05 + 0.1);
+        osc.frequency.linearRampToValueAtTime(Math.random() * 600, now + i * 0.05 + 0.2);
+
+        gain.gain.setValueAtTime(0.15, now + i * 0.05);
+        gain.gain.linearRampToValueAtTime(0.25, now + i * 0.05 + 0.05);
+        gain.gain.linearRampToValueAtTime(0, now + i * 0.05 + 0.25);
+
+        osc.type = ['square', 'sawtooth', 'triangle'][Math.floor(Math.random() * 3)];
+        osc.start(now + i * 0.05);
+        osc.stop(now + i * 0.05 + 0.25);
+      }
+
+      // Add a glitchy noise burst
+      const noise = audioCtx.createOscillator();
+      const noiseGain = audioCtx.createGain();
+      noise.connect(noiseGain);
+      noiseGain.connect(audioCtx.destination);
+      noise.type = 'sawtooth';
+      noise.frequency.setValueAtTime(80, now);
+      noise.frequency.linearRampToValueAtTime(2000, now + 0.15);
+      noise.frequency.linearRampToValueAtTime(100, now + 0.3);
+      noiseGain.gain.setValueAtTime(0.2, now);
+      noiseGain.gain.linearRampToValueAtTime(0, now + 0.35);
+      noise.start(now);
+      noise.stop(now + 0.35);
+    }
+
     // Create grass tufts
     for (let i = 0; i < 50; i++) {
       const tuft = document.createElement('div');
@@ -750,7 +791,9 @@
       if (catData.fed) return;
 
       // Play different sound based on cat type
-      if (catData.isRagdoll) {
+      if (catData.isCrazy) {
+        playCrazyMeow();
+      } else if (catData.isRagdoll) {
         playRagdollMeow();
       } else {
         playMeow();
