@@ -400,6 +400,35 @@
     const cats = [];
     const NUM_CATS = 6;
 
+    // Audio context for meow sounds
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+    // Synthesize a retro meow sound
+    function playMeow() {
+      const now = audioCtx.currentTime;
+
+      // Oscillator for the meow tone
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+
+      // Start high, go higher, then drop - like "meow"
+      osc.frequency.setValueAtTime(400 + Math.random() * 100, now);
+      osc.frequency.linearRampToValueAtTime(600 + Math.random() * 100, now + 0.1);
+      osc.frequency.linearRampToValueAtTime(300 + Math.random() * 50, now + 0.3);
+
+      // Volume envelope
+      gain.gain.setValueAtTime(0.3, now);
+      gain.gain.linearRampToValueAtTime(0.4, now + 0.1);
+      gain.gain.linearRampToValueAtTime(0, now + 0.35);
+
+      osc.type = 'triangle';
+      osc.start(now);
+      osc.stop(now + 0.35);
+    }
+
     // Create grass tufts
     for (let i = 0; i < 50; i++) {
       const tuft = document.createElement('div');
@@ -462,6 +491,7 @@
     function feedCat(catData) {
       if (catData.fed) return;
 
+      playMeow();
       catData.fed = true;
       catData.element.classList.remove('walking');
       catData.element.classList.add('fed');
