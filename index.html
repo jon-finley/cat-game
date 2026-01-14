@@ -826,8 +826,11 @@
 
       // Win condition: 2 orange AND 2 ragdolls
       if (orangeFed >= 2 && ragdollFed >= 2) {
+        // Stop the music immediately
+        musicStarted = false;
+        audioCtx.suspend();
+
         setTimeout(() => {
-          musicStarted = false; // Stop the music
           winScreen.style.display = 'flex';
           setTimeout(() => {
             // Embed the video with autoplay
